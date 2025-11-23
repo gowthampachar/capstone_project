@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Clone Test Framework</title>
+</head>
+<body>
+  <h1>Select Test Framework Template</h1>
+  <select id="template">
+    <option value="prototype-testing">prototype-testing</option>
+    <option value="playwright">Playwright</option>
+    <option value="karate">Karate</option>
+  </select>
+  <button onclick="cloneTemplate()">Clone To My GitHub</button>
+
+  <script>
+    function cloneTemplate() {
+      const selectedTemplate = document.getElementById('template').value;
+      window.location.href = `http://localhost:4000/github/login?template=${encodeURIComponent(selectedTemplate)}`;
+    }
+  </script>
+</body>
+</html>
