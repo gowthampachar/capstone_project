@@ -5,64 +5,111 @@ require('dotenv').config();
 const app = express();
 const PORT = 4000;
 
-const CLIENT_ID = process.env.GITHUB_CLIENT_ID;
-const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
+const BACKEND_TOKEN = process.env.BACKEND_GITHUB_TOKEN;    // PAT for template repo (read only)
+const CLIENT_ID = process.env.GITHUB_CLIENT_ID;            // OAuth app client ID
+const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;    // OAuth app client secret
 const REDIRECT_URI = `http://localhost:${PORT}/github/callback`;
 
+const TEMPLATE_REPO_OWNER = 'gowthamapachar';
+const TEMPLATE_REPO_NAME = 'prototype-testing'; // central repo containing all templates
+
+app.use(express.json());
+
+// Step 1: Redirect user to GitHub OAuth login
 app.get('/github/login', (req, res) => {
-  const repo = req.query.templateRepo;
-  const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}` +
+  const selectedTemplate = req.query.template; // e.g. testng, playwright as folders in your repo
+  const state = encodeURIComponent(selectedTemplate);
+  const authUrl = `https://github.com/login/oauth/authorize` +
+                  `?client_id=${CLIENT_ID}` +
                   `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-                  `&scope=repo&state=${encodeURIComponent(repo)}`;
+                  `&scope=repo` +
+                  `&state=${state}`;
   res.redirect(authUrl);
 });
 
+// Util: Get all files recursively from template repo folder
+async function fetchFilesRecursive(path = '') {
+  const url = `https://api.github.com/repos/${TEMPLATE_REPO_OWNER}/${TEMPLATE_REPO_NAME}/contents/${path}`;
+  const res = await axios.get(url, { headers: { Authorization: `token ${BACKEND_TOKEN}` } });
+  let files = [];
+  for (const item of res.data) {
+    if (item.type === 'file') {
+      const fileRes = await axios.get(item.download_url);
+      files.push({ path: item.path, content: Buffer.from(fileRes.data).toString('base64') });
+    } else if (item.type === 'dir') {
+      const innerFiles = await fetchFilesRecursive(item.path);
+      files = files.concat(innerFiles);
+    }
+  }
+  console.log('fetched all the templates content');
+  return files;
+}
+
+// Step 2: Handle GitHub OAuth callback and copy templates to user’s repo
 app.get('/github/callback', async (req, res) => {
   try {
-    console.log('Received GitHub callback', req.query);
     const code = req.query.code;
-    const templateRepo = decodeURIComponent(req.query.state);
+    const selectedTemplate = decodeURIComponent(req.query.state);
 
-    // Exchange code for access token
+    // Exchange code for user access token
     const tokenResponse = await axios.post('https://github.com/login/oauth/access_token', {
       client_id: CLIENT_ID,
       client_secret: CLIENT_SECRET,
       code,
       redirect_uri: REDIRECT_URI
     }, { headers: { Accept: 'application/json' } });
+    const userAccessToken = tokenResponse.data.access_token;
 
-    const accessToken = tokenResponse.data.access_token;
-
-    // Get logged in user info
-    const userResponse = await axios.get('https://api.github.com/user', {
-      headers: { Authorization: `token ${accessToken}` }
+    // Get authenticated user's GitHub username
+    const userRes = await axios.get('https://api.github.com/user', {
+      headers: { Authorization: `token ${userAccessToken}` }
     });
+    const username = userRes.data.login;
 
-    const username = userResponse.data.login;
+    // Create new repo in user's account
+    const repoName = `cloned-${selectedTemplate}`;
 
-    // Generate repo from template
-    const generateResponse = await axios.post(
-      `https://api.github.com/repos/${templateRepo}/generate`,
-      {
-        owner: username,
-        name: 'cloned-framework-repo',
-        private: false
-      },
-      {
-        headers: { Authorization: `token ${accessToken}` }
-      }
-    );
+    /* await axios.post(`https://api.github.com/user/repos`, {
+      name: repoName,
+      private: false,
+      description: `Cloned template ${selectedTemplate} from prototype-testing`
+    }, {
+      headers: { Authorization: `token ${userAccessToken}` }
+    }); */
+    await axios.post(
+        'https://api.github.com/repos/gowthamapachar/prototype-testing/generate',
+        {
+          owner: username,
+          name: repoName,
+          description: "Cloned from prototype-testing template repo",
+          private: false
+        },
+        {
+          headers: { Authorization: `token ${userAccessToken}` }
+        }
+      );
+      
 
-    if (generateResponse.status === 201) {
-      res.send('Repository cloned successfully to your GitHub account!');
-    } else {
-      res.send('Failed to clone repository.');
-    }
+    // Fetch all template files from selected folder inside template repo
+    //const files = await fetchFilesRecursive(selectedTemplate);
+
+    // Push template files to new user repo
+    /* for (const file of files) {
+      await axios.put(`https://api.github.com/repos/${username}/${repoName}/contents/${file.path}`, {
+        message: `Add template file ${file.path}`,
+        content: file.content,
+      }, {
+        headers: { Authorization: `token ${userAccessToken}` }
+      });
+    } */
+    console.log('pushed all the contents');
+
+    res.send(`Template '${selectedTemplate}' cloned successfully! Visit https://github.com/${username}/${repoName}`);
+
   } catch (error) {
-    res.send('Error: ' + error.message);
+    console.error('Error during cloning:', error.response?.data || error.message);
+    res.status(500).send('Cloning failed: ' + (error.response?.data?.message || error.message));
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
