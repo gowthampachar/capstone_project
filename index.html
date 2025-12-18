@@ -11,12 +11,16 @@
     <option value="playwright">Playwright</option>
     <option value="karate">Karate</option>
   </select>
+  <br><br>
+  <input type="text" id="projectName" placeholder="Enter project name" required>
+  <br><br>
   <button onclick="cloneTemplate()">Clone To My GitHub</button>
 
   <script>
     function cloneTemplate() {
       const selectedTemplate = document.getElementById('template').value;
-      window.location.href = `http://localhost:4000/github/login?template=${encodeURIComponent(selectedTemplate)}`;
+      const projectName = document.getElementById('projectName').value;
+      window.location.href = `http://localhost:4000/github/login?template=${encodeURIComponent(selectedTemplate)}&projectName=${encodeURIComponent(projectName)}`;
     }
   </script>
 </body>

@@ -18,7 +18,8 @@ app.use(express.json());
 // Step 1: Redirect user to GitHub OAuth login
 app.get('/github/login', (req, res) => {
   const selectedTemplate = req.query.template; // e.g. testng, playwright as folders in your repo
-  const state = encodeURIComponent(selectedTemplate);
+  const projectName = req.query.projectName;
+  const state = encodeURIComponent(`${selectedTemplate}|${projectName}`);
   const authUrl = `https://github.com/login/oauth/authorize` +
                   `?client_id=${CLIENT_ID}` +
                   `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
@@ -49,7 +50,7 @@ async function fetchFilesRecursive(path = '') {
 app.get('/github/callback', async (req, res) => {
   try {
     const code = req.query.code;
-    const selectedTemplate = decodeURIComponent(req.query.state);
+    const [selectedTemplate, projectName] = decodeURIComponent(req.query.state).split('|');
 
     // Exchange code for user access token
     const tokenResponse = await axios.post('https://github.com/login/oauth/access_token', {
@@ -67,7 +68,7 @@ app.get('/github/callback', async (req, res) => {
     const username = userRes.data.login;
 
     // Create new repo in user's account
-    const repoName = `cloned-${selectedTemplate}`;
+    const repoName = projectName;
 
     /* await axios.post(`https://api.github.com/user/repos`, {
       name: repoName,
@@ -104,7 +105,7 @@ app.get('/github/callback', async (req, res) => {
     } */
     console.log('pushed all the contents');
 
-    res.send(`Template '${selectedTemplate}' cloned successfully! Visit https://github.com/${username}/${repoName}`);
+    res.send(`<p>Template '${selectedTemplate}' cloned successfully! <br> Visit <a href="https://github.com/${username}/${repoName}" target="_blank">https://github.com/${username}/${repoName}</a></p>`);
 
   } catch (error) {
     console.error('Error during cloning:', error.response?.data || error.message);
