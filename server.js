@@ -15,7 +15,7 @@ const TEMPLATE_REPO_NAME = 'prototype-testing'; // central repo containing all t
 
 app.use(express.json());
 
-// Step 1: Redirect user to GitHub OAuth login
+//Redirect user to GitHub OAuth login
 app.get('/github/login', (req, res) => {
   const selectedTemplate = req.query.template; // e.g. testng, playwright as folders in your repo
   const projectName = req.query.projectName;
