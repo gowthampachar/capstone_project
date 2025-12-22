@@ -1,4 +1,7 @@
 {
+  "script":{
+    "test": "node server.js"
+  },
   "dependencies": {
     "axios": "^1.13.2",
     "dotenv": "^17.2.3",
