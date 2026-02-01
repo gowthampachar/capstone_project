@@ -80,7 +80,7 @@ app.get('/github/callback', async (req, res) => {
     }, {
       headers: { Authorization: `token ${userAccessToken}` }
     }); */
-    await axios.post(
+    const generateResp = await axios.post(
         `https://api.github.com/repos/${TEMPLATE_REPO_OWNER}/${templateRepo}/generate`,
         {
           owner: username,
@@ -92,23 +92,103 @@ app.get('/github/callback', async (req, res) => {
           headers: { Authorization: `token ${userAccessToken}` }
         }
       );
-      
 
-    // Fetch all template files from selected folder inside template repo
-    // const files = await fetchFilesRecursive(templateRepo);
+    // GitHub's generate endpoint returns information about the created repository.
+    // Prefer `html_url` if provided; otherwise construct a fallback URL.
+    const createdRepoUrl = (generateResp && generateResp.data && (generateResp.data.html_url || generateResp.data.htmlUrl))
+      ? (generateResp.data.html_url || generateResp.data.htmlUrl)
+      : `https://github.com/${username}/${repoName}`;
+    console.log('Generated repo URL:', createdRepoUrl);
 
-    // Push template files to new user repo
-    /* for (const file of files) {
-      await axios.put(`https://api.github.com/repos/${username}/${repoName}/contents/${file.path}`, {
-        message: `Add template file ${file.path}`,
-        content: file.content,
-      }, {
-        headers: { Authorization: `token ${userAccessToken}` }
-      });
-    } */
-    console.log('pushed all the contents');
+    res.send(`<div id="clone-success" style="--brand:#4285f4; --bg:#f4fffe9a; font-family:Inter, system-ui, -apple-system, \'Segoe UI\', Roboto, Arial; box-sizing:border-box;">`
+  + `<style>` 
+  +  `#clone-success .card {`
+  +   `max-width:720px;`
+  +    `margin:20px auto;`
+  +    `background:var(--bg);`
+  +    `border-radius:12px;`
+  +    `padding:18px 20px;`
+  +    `display:flex;`
+  +    `gap:16px;`
+  +    `align-items:center;`
+  +    `box-shadow:0 8px 28px rgba(11,37,79,0.06);`
+  +    `border:1px solid rgba(66,133,244,0.06);`
+  +  `}`
+  +  `#clone-success .logo {`
+  +    `width:56px;`
+  +    `height:56px;`
+  +    `min-width:56px;`
+  +    `border-radius:10px;`
+  +    `background: #e0ece9;`
+  +    `display:flex;`
+  +    `align-items:center;`
+  +    `justify-content:center;`
+  +    `color:#fff;`
+  +    `font-weight:700;`
+  +    `font-size:20px;`
+  +    `box-shadow:0 8px 20px rgba(66,133,244,0.12);`
+  +  `}`
+  +  `#clone-success .content {`
+  +    `flex:1;`
+  +  `}`
+  +  `#clone-success h2 {`
+  +    `margin:0 0 6px 0;`
+  +    `font-size:16px;`
+  +    `color:var(--brand);`
+  +  `}`
+  +  `#clone-success p {`
+  +    `margin:0 0 10px 0;`
+  +    `color:#0b254f;`
+  +    `font-size:14px;`
+  +    `line-height:1.3;`
+  +  `}`
+  +  `#clone-success .url {`
+  +    `display:inline-flex;`
+  +    `gap:10px;`
+  +    `align-items:center;`
+   +    `padding:8px 12px;`
+   +    `background:#fff;`
+  +    `border-radius:10px;`
+  +    `border:1px solid rgba(66,133,244,0.08);`
+  +    `box-shadow:0 6px 18px rgba(66,133,244,0.06);`
+  +    `font-size:13px;`
+  +    `color:#0b254f;`
+  +    `text-decoration:none;`
+  +  `}`
+  +  `#clone-success .actions { margin-top:10px; display:flex; gap:8px; align-items:center; }`
+  +  `#clone-success .btn {`
+  +    `background:var(--brand);`
+  +    `color:#fff;`
+  +    `padding:8px 12px;`
+  +    `border-radius:8px;`
+  +    `border:none;`
+  +    `cursor:pointer;`
+  +    `font-weight:600;`
+  +    `font-size:13px;`
+  +    `text-decoration:none;`
+  +  `}`
+  +  `#clone-success .btn.secondary {`
+  +    `background:transparent;`
+  +    `color:var(--brand);`
+  +    `border:1px solid rgba(66,133,244,0.12);`
+  +  `}`
+  + `</style>`
 
-    res.send(`<p>Template '${selectedTemplate}' cloned successfully! <br> Visit <a href="https://github.com/${username}/${repoName}" target="_blank">https://github.com/${username}/${repoName}</a></p>`);
+  + `<div class="card" role="status" aria-live="polite">`
+  + `    <div class="logo" aria-hidden="true">`
+  + `        <!-- You can place a small logo or initials here -->`
+  + `        <img src="../logo/tool%20logo.png" alt="Tool logo" style="width: 65px; height: 65px; object-fit:contain; border-radius: 8px;" />`
+  + `    </div>`
+  + `    <div class="content">`
+  + `      <h2 id="success-title">Repository created successfully</h2>`
+  + `      <p id="success-desc">Your selected Prototype <strong id="success-template">${selectedTemplate}</strong> was cloned successfully into your repository!!..</p>`
+  + `      <div class="actions">`
+  + `        <a id="open-repo-btn" class="btn" href="${createdRepoUrl}" target="_blank" rel="noopener noreferrer">Open the Prototype</a>`
+  + `        <button class="btn secondary" onclick="location.href=\`index.html\`">Back to Dashboard</button>`
+  + `      </div>`
+  + `    </div>`
+  + `  </div>`
+  + `</div>`);
 
   } catch (error) {
     console.error('Error during cloning:', error.response?.data || error.message);

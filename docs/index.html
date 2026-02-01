@@ -2,27 +2,200 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Clone Test Framework</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Automation Testing Prototype Generator</title>
+  <link rel="icon" type="image/png" href="../logo/tool%20logo.png" style="border-radius:10px"/>
+  <style>
+    :root{
+      --brand: #4285f4;
+      --bg: #f4fffe;
+      --muted: rgba(11,37,79,0.08);
+      --text: #0b254f;
+      --radius: 12px;
+    }
+
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;background:linear-gradient(180deg,#f4f8ff 0%,#eef6ff 60%);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;color:var(--text)}
+
+    .container{min-height:100%;display:flex;align-items:center;justify-content:center;padding:28px;box-sizing:border-box}
+
+    .card{width:420px;max-width:100%;background:var(--bg);border-radius:var(--radius);padding:26px;box-shadow:0 10px 30px rgba(66,133,244,0.12);border:1px solid var(--muted)}
+
+    .header{display:flex;gap:14px;align-items:center;margin-bottom:12px}
+
+    .logo{width:60px;height:60px;border-radius:10px;background: #ffffff;display:flex;align-items:center;justify-content:center;color:var(--bg);font-weight:700;font-size:20px;box-shadow:0 8px 24px rgb(255, 255, 255)}
+
+    h1{margin:0;font-size:18px;color:var(--brand);line-height:1.05}
+    p.lead{margin:6px 0 0;color:rgba(11,37,79,0.72);font-size:13px}
+
+    .form-row{margin-top:16px}
+    label{display:block;font-size:13px;color:var(--brand);font-weight:600;margin-bottom:8px}
+
+    select{width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(66,133,244,0.14);background:linear-gradient(180deg,var(--bg),#fbfbff);color:var(--text);font-size:14px;outline:none;transition:box-shadow .12s,border-color .12s;appearance:none;background-image:linear-gradient(45deg, transparent 50%, var(--brand) 50%),linear-gradient(135deg, var(--brand) 50%, transparent 50%);background-position:calc(100% - 18px) calc(1em + 2px),calc(100% - 13px) calc(1em + 2px);background-size:6px 6px,6px 6px;background-repeat:no-repeat}
+
+    select:focus{border-color:var(--brand);box-shadow:0 8px 24px rgba(66,133,244,0.12)}
+
+    .actions{display:flex;gap:12px;margin-top:16px;align-items:center}
+
+    .btn{flex:1;background:var(--brand);color:#f3f8ff;padding:12px 14px;border-radius:10px;border:none;font-weight:700;cursor:pointer;box-shadow:0 10px 26px rgba(66,133,244,0.18);transition:transform .08s,box-shadow .12s,opacity .12s;font-size:14px}
+    .btn:hover{transform:translateY(-2px)}
+    .btn:active{transform:translateY(0);opacity:.95}
+
+    .secondary{background:transparent;color:var(--brand);border:1px solid rgba(66,133,244,0.12);box-shadow:none;font-weight:600;padding:10px 12px;border-radius:10px}
+
+    .meta{margin-top:12px;font-size:12px;color:rgba(11,37,79,0.6);display:flex;justify-content:space-between;align-items:center}
+    .swatch{width:14px;height:14px;border-radius:3px;border:1px solid rgba(11,37,79,0.06)}
+
+    /* Modal for project name input */
+    .modal-backdrop{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(6,24,48,0.45);z-index:60}
+    .modal{width:420px;max-width:92%;background:var(--bg);padding:20px;border-radius:12px;box-shadow:0 20px 60px rgba(11,37,79,0.28);border:1px solid rgba(66,133,244,0.08)}
+    .modal h2{margin:0 0 8px;font-size:16px;color:var(--brand)}
+    .modal p{margin:0 0 12px;color:rgba(11,37,79,0.68);font-size:13px}
+    .modal-input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(66,133,244,0.12);font-size:14px;box-sizing:border-box}
+    .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+
+    @media (max-width:480px){.card{padding:18px;width:100%;border-radius:10px}.logo{width:44px;height:44px;font-size:18px}}
+  </style>
 </head>
 <body>
-  <h1>Select Test Framework Template</h1>
-  <select id="template">
-    <option value="prototype-testing">prototype-testing</option>
-    <option value="Selenium_POM">Selenium-Java-POM</option>
-    <option value="playwright">Playwright</option>
-    <option value="karate">Karate</option>
-  </select>
-  <br><br>
-  <input type="text" id="projectName" placeholder="Enter project name" required>
-  <br><br>
-  <button onclick="cloneTemplate()">Clone To My GitHub</button>
+  <div class="container">
+    <main class="card" role="region" aria-label="Clone Test Framework">
+      <header class="header">
+        <div class="logo" aria-hidden="true">
+          <!-- Project logo file from repo's `logo/` folder. Filename contains a space so it's percent-encoded in the src. -->
+          <img src="../logo/tool%20logo.png" alt="Tool logo" style="width: 75px;height: 80px;object-fit:contain;border-radius: 15px;" />
+        </div>
+        <div>
+          <h1>Automation Testing Prototypes</h1>
+          <p class="lead">Pick a prototype and clone it to your GitHub repository.</p>
+        </div>
+      </header>
+
+      <form id="template-form" onsubmit="event.preventDefault(); cloneTemplate();" aria-label="Template form">
+        <div class="form-row">
+          <label>1. What language do you prefer?</label>
+          <div style="display:flex;gap:12px;align-items:center">
+            <label style="font-weight:600;color:var(--text);font-size:14px"><input type="radio" name="language" value="javascript" checked onchange="onLanguageChange(event)"> JavaScript</label>
+            <label style="font-weight:600;color:var(--text);font-size:14px"><input type="radio" name="language" value="java" onchange="onLanguageChange(event)"> Java</label>
+          </div>
+        </div>
+
+        <div class="form-row" id="style-options">
+          <label for="style-select">2. Which style do you prefer?</label>
+          <select id="style-select" name="style-select">
+            <option value="bdd">BDD</option>
+            <option value="pom">POM</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label>Suggested Framework</label>
+          <div id="suggestion" style="font-weight:700;color:var(--brand)">Playwright</div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn" aria-label="Clone selected template">Clone To My GitHub</button>
+          <button type="button" class="secondary" onclick="window.open('https://github.com/login','_blank')" aria-label="Open GitHub">Open GitHub</button>
+        </div>
+
+        <div class="meta" aria-hidden="true">
+          <div id="status-text">Ready to clone</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="swatch" style="background:var(--brand)"></span>
+            <span class="swatch" style="background:var(--bg);border:1px solid rgba(66,133,244,0.12)"></span>
+          </div>
+        </div>
+      </form>
+      <!-- Project name modal (hidden by default) -->
+      <div id="project-modal" class="modal-backdrop" style="display:none" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="project-modal-title">
+          <h2 id="project-modal-title">Repo Name</h2>
+          <p>Enter the name for the repository that will be created in your GitHub account. Spaces are not allowed.</p>
+          <input id="project-name" class="modal-input" type="text" aria-label="Repo name" />
+          <div class="modal-actions">
+            <button id="modal-confirm" class="btn">Clone</button>
+            <button id="modal-cancel" class="secondary">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
 
   <script>
-    function cloneTemplate() {
-      const selectedTemplate = document.getElementById('template').value;
-      const projectName = document.getElementById('projectName').value;
-      window.location.href = `http://localhost:4000/github/login?template=${encodeURIComponent(selectedTemplate)}&projectName=${encodeURIComponent(projectName)}`;
-    }
+      // Update suggestion based on language + style
+      function updateSuggestion() {
+        const lang = document.querySelector('input[name="language"]:checked').value;
+        const style = document.getElementById('style-select').value;
+        const suggestion = document.getElementById('suggestion');
+        if (lang === 'java') {
+          suggestion.textContent = style === 'bdd' ? 'Selenium (BDD)' : 'Selenium (POM)';
+        } else {
+          suggestion.textContent = style === 'bdd' ? 'Playwright (BDD)' : 'Playwright (POM)';
+        }
+      }
+
+      // wrapper for inline onchange handlers (keeps backward compatibility)
+      function onLanguageChange(e) { updateSuggestion(); }
+
+      // show modal to ask for project name, then perform clone
+      function cloneTemplate() {
+        const lang = document.querySelector('input[name="language"]:checked').value;
+        const style = document.getElementById('style-select').value;
+        let template = '';
+        if (lang === 'javascript') {
+          template = style === 'bdd' ? 'Playwright_BDD' : 'Playwright_POM';
+        } else {
+          template = style === 'bdd' ? 'Selenium_BDD' : 'Selenium_POM';
+        }
+        // open modal with default project name
+        openProjectModal(template);
+      }
+
+      function openProjectModal(template) {
+        window.__selectedTemplate = template;
+        const modal = document.getElementById('project-modal');
+        const input = document.getElementById('project-name');
+        document.getElementById('status-text').textContent = `Ready to clone ${template}`;
+        const safeDefault = (template + '_template');
+        input.value = safeDefault;
+        modal.style.display = 'flex';
+        modal.setAttribute('aria-hidden', 'false');
+        input.focus();
+      }
+
+      function closeProjectModal() {
+        const modal = document.getElementById('project-modal');
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
+      }
+
+      function performClone() {
+        const template = window.__selectedTemplate || '';
+        let project = document.getElementById('project-name').value.trim();
+        // handle missing or literal 'undefined' project names by falling back to a safe default
+        if (!project || project.toLowerCase() === 'undefined') {
+          project = (template || 'project') + '_template';
+        }
+        // sanitize project name to safe characters for URLs / repo names
+       // project = project.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9-_.]/g, '_');
+        document.getElementById('status-text').textContent = `Cloning ${template} as ${project}...`;
+        closeProjectModal();
+        const url = `http://localhost:4000/github/login?template=${encodeURIComponent(template)}&projectName=${encodeURIComponent(project)}`;
+        window.location.href = url;
+      }
+
+      // initialize UI state on load
+      (function init() {
+        const radios = document.querySelectorAll('input[name="language"]');
+        radios.forEach(r => r.addEventListener('change', updateSuggestion));
+        document.getElementById('style-select').addEventListener('change', updateSuggestion);
+        // modal buttons
+        document.getElementById('modal-confirm').addEventListener('click', performClone);
+        document.getElementById('modal-cancel').addEventListener('click', function () { closeProjectModal(); });
+        // allow Enter to submit project name
+        document.getElementById('project-name').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); performClone(); } });
+        // ensure suggestion reflects initial selection
+        updateSuggestion();
+      })();
   </script>
 </body>
 </html>
