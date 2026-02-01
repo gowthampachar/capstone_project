@@ -177,14 +177,14 @@ app.get('/github/callback', async (req, res) => {
   + `<div class="card" role="status" aria-live="polite">`
   + `    <div class="logo" aria-hidden="true">`
   + `        <!-- You can place a small logo or initials here -->`
-  + `        <img src="../logo/tool%20logo.png" alt="Tool logo" style="width: 65px; height: 65px; object-fit:contain; border-radius: 8px;" />`
+  + `        <img src="https://gowthampachar.github.io/capstone_project/tool%20logo.png" alt="Tool logo" style="width: 65px; height: 65px; object-fit:contain; border-radius: 8px;" />`
   + `    </div>`
   + `    <div class="content">`
   + `      <h2 id="success-title">Repository created successfully</h2>`
   + `      <p id="success-desc">Your selected Prototype <strong id="success-template">${selectedTemplate}</strong> was cloned successfully into your repository!!..</p>`
   + `      <div class="actions">`
   + `        <a id="open-repo-btn" class="btn" href="${createdRepoUrl}" target="_blank" rel="noopener noreferrer">Open the Prototype</a>`
-  + `        <button class="btn secondary" onclick="location.href=\`index.html\`">Back to Dashboard</button>`
+  + `        <button class="btn secondary" onclick="location.href=\`https://gowthampachar.github.io/capstone_project/\`">Back to Dashboard</button>`
   + `      </div>`
   + `    </div>`
   + `  </div>`
