@@ -11,14 +11,15 @@ const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;    // OAuth app client s
 const REDIRECT_URI = `http://localhost:${PORT}/github/callback`;
 
 const TEMPLATE_REPO_OWNER = 'gowthamapachar';
-const TEMPLATE_REPO_NAME = 'prototype-testing'; // central repo containing all templates
+const TEMPLATE_REPO_NAME = process.env.TEMPLATE_REPO_NAME || 'prototype-testing'; // central repo containing all templates (can be overridden by selected template)
 
 app.use(express.json());
 
-// Step 1: Redirect user to GitHub OAuth login
+//Redirect user to GitHub OAuth login
 app.get('/github/login', (req, res) => {
-  const selectedTemplate = req.query.template; // e.g. testng, playwright as folders in your repo
-  const state = encodeURIComponent(selectedTemplate);
+  const selectedTemplate = req.query.template; // e.g. testng, playwright
+  const projectName = req.query.projectName;
+  const state = encodeURIComponent(`${selectedTemplate}|${projectName}`);
   const authUrl = `https://github.com/login/oauth/authorize` +
                   `?client_id=${CLIENT_ID}` +
                   `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
@@ -28,8 +29,8 @@ app.get('/github/login', (req, res) => {
 });
 
 // Util: Get all files recursively from template repo folder
-async function fetchFilesRecursive(path = '') {
-  const url = `https://api.github.com/repos/${TEMPLATE_REPO_OWNER}/${TEMPLATE_REPO_NAME}/contents/${path}`;
+async function fetchFilesRecursive(repo = TEMPLATE_REPO_NAME, path = '') {
+  const url = `https://api.github.com/repos/${TEMPLATE_REPO_OWNER}/${repo}/contents/${path}`;
   const res = await axios.get(url, { headers: { Authorization: `token ${BACKEND_TOKEN}` } });
   let files = [];
   for (const item of res.data) {
@@ -37,19 +38,22 @@ async function fetchFilesRecursive(path = '') {
       const fileRes = await axios.get(item.download_url);
       files.push({ path: item.path, content: Buffer.from(fileRes.data).toString('base64') });
     } else if (item.type === 'dir') {
-      const innerFiles = await fetchFilesRecursive(item.path);
+      const innerFiles = await fetchFilesRecursive(repo, item.path);
       files = files.concat(innerFiles);
     }
   }
   console.log('fetched all the templates content');
   return files;
-}
+} 
 
 // Step 2: Handle GitHub OAuth callback and copy templates to user’s repo
 app.get('/github/callback', async (req, res) => {
   try {
     const code = req.query.code;
-    const selectedTemplate = decodeURIComponent(req.query.state);
+    const [selectedTemplate, projectName] = decodeURIComponent(req.query.state).split('|');
+
+    // If user selected a template, use that as the template repo name; otherwise fall back to default
+    const templateRepo = selectedTemplate || TEMPLATE_REPO_NAME;
 
     // Exchange code for user access token
     const tokenResponse = await axios.post('https://github.com/login/oauth/access_token', {
@@ -67,21 +71,21 @@ app.get('/github/callback', async (req, res) => {
     const username = userRes.data.login;
 
     // Create new repo in user's account
-    const repoName = `cloned-${selectedTemplate}`;
+    const repoName = projectName;
 
     /* await axios.post(`https://api.github.com/user/repos`, {
       name: repoName,
       private: false,
-      description: `Cloned template ${selectedTemplate} from prototype-testing`
+      description: `Cloned template ${selectedTemplate} from ${TEMPLATE_REPO_OWNER}/${templateRepo}`
     }, {
       headers: { Authorization: `token ${userAccessToken}` }
     }); */
     await axios.post(
-        'https://api.github.com/repos/gowthamapachar/prototype-testing/generate',
+        `https://api.github.com/repos/${TEMPLATE_REPO_OWNER}/${templateRepo}/generate`,
         {
           owner: username,
           name: repoName,
-          description: "Cloned from prototype-testing template repo",
+          description: `Cloned template ${selectedTemplate} from ${TEMPLATE_REPO_OWNER}/${templateRepo}`,
           private: false
         },
         {
@@ -91,7 +95,7 @@ app.get('/github/callback', async (req, res) => {
       
 
     // Fetch all template files from selected folder inside template repo
-    //const files = await fetchFilesRecursive(selectedTemplate);
+    // const files = await fetchFilesRecursive(templateRepo);
 
     // Push template files to new user repo
     /* for (const file of files) {
@@ -104,7 +108,7 @@ app.get('/github/callback', async (req, res) => {
     } */
     console.log('pushed all the contents');
 
-    res.send(`Template '${selectedTemplate}' cloned successfully! Visit https://github.com/${username}/${repoName}`);
+    res.send(`<p>Template '${selectedTemplate}' cloned successfully! <br> Visit <a href="https://github.com/${username}/${repoName}" target="_blank">https://github.com/${username}/${repoName}</a></p>`);
 
   } catch (error) {
     console.error('Error during cloning:', error.response?.data || error.message);
